@@ -4,18 +4,38 @@
 
 #include "src/compiled.h"          /* GAP headers */
 
+Int T_FLINT;
+Obj TYPE_FLINTOBJ;
 
-Obj TestCommand(Obj self)
+Obj TypeFlintObj(Obj o)
 {
-    return INTOBJ_INT(42);
+    return TYPE_FLINTOBJ;
 }
 
-Obj TestCommandWithParams(Obj self, Obj param, Obj param2)
+/* Memory management */
+Obj NewFlintObj(Obj self, Obj c)
 {
-    /* simply return the first parameter */
-    return param;
+    Obj o;
+
+    if(!IS_INTOBJ(c)) {
+        ErrorQuit( "Usage: NewFlintObj(integer)", 0L, 0L);
+    }
+    o = NewBag(T_FLINT, 2 * sizeof(Obj));
+
+    return o;
 }
 
+void MarkFlintObj(Bag o)
+{
+}
+
+void SweepFlintObj(Bag *src, Bag *dst, UInt len)
+{
+}
+
+void FreeFlintObj(Obj o)
+{
+}
 
 typedef Obj (* GVarFunc)(/*arguments*/);
 
@@ -27,8 +47,7 @@ typedef Obj (* GVarFunc)(/*arguments*/);
 
 // Table of functions to export
 static StructGVarFunc GVarFuncs [] = {
-    GVAR_FUNC_TABLE_ENTRY("flinting.c", TestCommand, 0, ""),
-    GVAR_FUNC_TABLE_ENTRY("flinting.c", TestCommandWithParams, 2, "param, param2"),
+    GVAR_FUNC_TABLE_ENTRY("flinting.c", NewFlintObj, 1, "type"),
 
 	{ 0 } /* Finish with an empty entry */
 
@@ -39,6 +58,13 @@ static StructGVarFunc GVarFuncs [] = {
 */
 static Int InitKernel( StructInitInfo *module )
 {
+    ImportGVarFromLibrary("TypeFlintObj", &TYPE_FLINTOBJ);
+    T_FLINT = RegisterPackageTNUM("FlintingTNUM", TypeFlintObj);
+
+    InitFreeFuncBag(T_FLINT, FreeFlintObj);
+    InitMarkFuncBags(T_FLINT, MarkFlintObj);
+    InitSweepFuncBags(T_FLINT, SweepFlintObj);   
+ 
     /* init filters and functions                                          */
     InitHdlrFuncsFromTable( GVarFuncs );
 
